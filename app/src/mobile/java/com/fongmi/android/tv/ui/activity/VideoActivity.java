@@ -85,7 +85,6 @@ import com.fongmi.android.tv.ui.dialog.EpisodeListDialog;
 import com.fongmi.android.tv.ui.dialog.InfoDialog;
 import com.fongmi.android.tv.ui.dialog.ReceiveDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
-import com.fongmi.android.tv.ui.dialog.TitleDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.FileChooser;
@@ -333,7 +332,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mBinding.control.action.scale.setOnClickListener(view -> onScale());
         mBinding.control.action.speed.setOnClickListener(view -> onSpeed());
         mBinding.control.action.reset.setOnClickListener(view -> onReset());
-        mBinding.control.action.title.setOnClickListener(view -> onTitle());
         mBinding.control.action.player.setOnClickListener(view -> onChoose());
         mBinding.control.action.decode.setOnClickListener(view -> onDecode());
         mBinding.control.action.ending.setOnClickListener(view -> onEnding());
@@ -754,11 +752,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
 
     private void onTrack(View view) {
         TrackDialog.create().player(mPlayers).type(Integer.parseInt(view.getTag().toString())).show(this);
-        hideControl();
-    }
-
-    private void onTitle() {
-        TitleDialog.create().player(mPlayers).show(this);
         hideControl();
     }
 
@@ -1237,9 +1230,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
                 setTrackVisible();
                 mClock.setCallback(this);
                 break;
-            case PlayerEvent.TITLE:
-                setTitleVisible();
-                break;
             case PlayerEvent.SIZE:
                 changeHeight();
                 checkOrientation();
@@ -1292,11 +1282,6 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mBinding.control.action.audio.setVisibility(mPlayers.haveTrack(C.TRACK_TYPE_AUDIO) ? View.VISIBLE : View.GONE);
         mBinding.control.action.video.setVisibility(mPlayers.haveTrack(C.TRACK_TYPE_VIDEO) ? View.VISIBLE : View.GONE);
         if (mControlDialog != null && mControlDialog.isVisible()) mControlDialog.setTrackVisible();
-    }
-
-    private void setTitleVisible() {
-        mBinding.control.action.title.setVisibility(mPlayers.haveTitle() ? View.VISIBLE : View.GONE);
-        if (mControlDialog != null && mControlDialog.isVisible()) mControlDialog.setTitleVisible();
     }
 
     private void setMetadata() {

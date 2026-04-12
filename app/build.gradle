@@ -95,6 +95,15 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'androidx.core:core-splashscreen:1.2.0'
     implementation 'androidx.media:media:1.7.1'
+    implementation 'androidx.media3:media3-common:' + media3Version
+    implementation 'androidx.media3:media3-exoplayer:' + media3Version
+    implementation 'androidx.media3:media3-exoplayer-hls:' + media3Version
+    implementation 'androidx.media3:media3-exoplayer-dash:' + media3Version
+    implementation 'androidx.media3:media3-exoplayer-rtsp:' + media3Version
+    implementation 'androidx.media3:media3-exoplayer-smoothstreaming:' + media3Version
+    implementation 'androidx.media3:media3-ui:' + media3Version
+    implementation 'androidx.media3:media3-session:' + media3Version
+    implementation 'androidx.media3:media3-datasource-okhttp:' + media3Version
     implementation 'androidx.palette:palette:1.0.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'androidx.room:room-runtime:2.8.4'
@@ -110,6 +119,7 @@ dependencies {
     implementation 'com.github.jahirfiquitiva:TextDrawable:1.0.3'
     implementation 'com.github.mcxinyu:LibRtmp-Client-for-Android:v3.2.0.m2'
     implementation 'com.github.teamnewpipe:NewPipeExtractor:v0.26.0'
+    implementation 'io.github.anilbeesetti:nextlib-media3ext:' + nextlibVersion
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'com.guolindev.permissionx:permissionx:1.8.1'
     implementation 'javax.servlet:javax.servlet-api:3.1.0'

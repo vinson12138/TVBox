@@ -9,8 +9,9 @@ tasks.register('clean', Delete) {
 }
 
 project.ext {
-    gsonVersion = '2.13.2'
-    glideVersion = '5.0.5'
-    media3Version = '1.9.2'
-    okhttpVersion = '5.3.2'
+    gsonVersion = '2.11.0'
+    glideVersion = '4.16.0'
+    media3Version = '1.5.1'
+    nextlibVersion = '1.9.3-0.12.0'
+    okhttpVersion = '4.12.0'
 }

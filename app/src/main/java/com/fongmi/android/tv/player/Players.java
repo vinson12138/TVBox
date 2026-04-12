@@ -24,7 +24,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
 import androidx.media3.common.C;
-import androidx.media3.common.MediaTitle;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
@@ -150,7 +149,6 @@ public class Players implements Player.Listener, ParseCallback {
         if (BuildConfig.DEBUG) exoPlayer.addAnalyticsListener(new EventLogger());
         exoPlayer.setAudioAttributes(AudioAttributes.DEFAULT, true);
         exoPlayer.setHandleAudioBecomingNoisy(true);
-        view.setRender(Setting.getRender());
         exoPlayer.setPlayWhenReady(true);
         exoPlayer.addListener(this);
         view.setPlayer(exoPlayer);
@@ -191,14 +189,6 @@ public class Players implements Player.Listener, ParseCallback {
     public void setFormat(String format) {
         this.format = format;
         setMediaItem();
-    }
-
-    public void setTitle(MediaTitle title) {
-        Uri uri = UrlUtil.uri(url);
-        Uri newUri = uri.buildUpon().fragment("title=" + title.index).build();
-        url = newUri.toString();
-        setMediaItem();
-        seekTo(0);
     }
 
     public String getKey() {
@@ -265,10 +255,6 @@ public class Players implements Player.Listener, ParseCallback {
 
     public boolean haveTrack(int type) {
         return exoPlayer != null && TrackUtil.count(exoPlayer.getCurrentTracks(), type) > 0;
-    }
-
-    public boolean haveTitle() {
-        return exoPlayer != null && !exoPlayer.getCurrentMediaTitles().isEmpty();
     }
 
     public boolean haveDanmaku() {
@@ -493,7 +479,7 @@ public class Players implements Player.Listener, ParseCallback {
     }
 
     private void setMediaItem(Map<String, String> headers, String url, String format, Drm drm, List<Sub> subs, List<Danmaku> danmakus, long timeout) {
-        if (exoPlayer != null) exoPlayer.setMediaItem(ExoUtil.getMediaItem(this.headers = checkUa(headers), UrlUtil.uri(this.url = url), this.format = format, this.drm = drm, checkSub(this.subs = subs), decode));
+        if (exoPlayer != null) exoPlayer.setMediaItem(ExoUtil.getMediaItem(this.headers = checkUa(headers), UrlUtil.uri(this.url = url), this.format = format, this.drm = drm, checkSub(this.subs = subs)));
         Logger.t(TAG).d("headers=%s\nurl=%s\nformat=%s\ndrm=%s\nsubs=%s\ndanmakus=%s\ntimeout=%s", this.headers, url, format, drm, this.subs, danmakus, timeout);
         if (danPlayer != null) setDanmaku(this.danmakus = danmakus);
         App.post(runnable, timeout);
@@ -674,11 +660,6 @@ public class Players implements Player.Listener, ParseCallback {
         setTrack(Track.find(getKey()));
         PlayerEvent.track(tag);
         initTrack = true;
-    }
-
-    @Override
-    public void onMediaTitlesChanged(@NonNull List<MediaTitle> titles) {
-        PlayerEvent.title(tag);
     }
 
     @Override

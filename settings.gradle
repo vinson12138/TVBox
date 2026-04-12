@@ -11,7 +11,10 @@ dependencyResolutionManagement {
         mavenCentral()
         google()
         flatDir { dirs "$rootDir/app/libs" }
-        maven { url "https://jitpack.io" }
+        maven {
+            url "https://jitpack.io"
+            content { excludeGroup "io.github.anilbeesetti" }
+        }
         maven {
             url "http://4thline.org/m2"
             allowInsecureProtocol = true

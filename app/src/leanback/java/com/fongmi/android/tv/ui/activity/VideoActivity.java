@@ -64,7 +64,6 @@ import com.fongmi.android.tv.ui.custom.CustomMovement;
 import com.fongmi.android.tv.ui.dialog.DanmakuDialog;
 import com.fongmi.android.tv.ui.dialog.DescDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
-import com.fongmi.android.tv.ui.dialog.TitleDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.ui.presenter.ArrayPresenter;
 import com.fongmi.android.tv.ui.presenter.EpisodePresenter;
@@ -311,7 +310,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mBinding.control.scale.setOnClickListener(view -> onScale());
         mBinding.control.speed.setOnClickListener(view -> onSpeed());
         mBinding.control.reset.setOnClickListener(view -> onReset());
-        mBinding.control.title.setOnClickListener(view -> onTitle());
         mBinding.control.player.setOnClickListener(view -> onChoose());
         mBinding.control.decode.setOnClickListener(view -> onDecode());
         mBinding.control.ending.setOnClickListener(view -> onEnding());
@@ -848,11 +846,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         hideControl();
     }
 
-    private void onTitle() {
-        TitleDialog.create().player(mPlayers).show(this);
-        hideControl();
-    }
-
     private void onDanmaku() {
         DanmakuDialog.create().player(mPlayers).show(this);
         hideControl();
@@ -1124,9 +1117,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
                 setTrackVisible();
                 mClock.setCallback(this);
                 break;
-            case PlayerEvent.TITLE:
-                setTitleVisible();
-                break;
             case PlayerEvent.SIZE:
                 mBinding.widget.size.setText(mPlayers.getSizeText());
                 break;
@@ -1150,10 +1140,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mBinding.control.text.setVisibility(mPlayers.haveTrack(C.TRACK_TYPE_TEXT) || mPlayers.isVod() ? View.VISIBLE : View.GONE);
         mBinding.control.audio.setVisibility(mPlayers.haveTrack(C.TRACK_TYPE_AUDIO) ? View.VISIBLE : View.GONE);
         mBinding.control.video.setVisibility(mPlayers.haveTrack(C.TRACK_TYPE_VIDEO) ? View.VISIBLE : View.GONE);
-    }
-
-    private void setTitleVisible() {
-        mBinding.control.title.setVisibility(mPlayers.haveTitle() ? View.VISIBLE : View.GONE);
     }
 
     private void setMetadata() {
