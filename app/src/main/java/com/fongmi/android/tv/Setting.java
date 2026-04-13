@@ -274,6 +274,14 @@ public class Setting {
         Prefers.put("subtitle_position", value);
     }
 
+    public static boolean isHomeLiveVisible() {
+        return Prefers.getBoolean("home_live_visible", true);
+    }
+
+    public static void putHomeLiveVisible(boolean visible) {
+        Prefers.put("home_live_visible", visible);
+    }
+
     public static boolean isBackgroundOff() {
         return getBackground() == 0;
     }

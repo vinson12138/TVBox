@@ -11,9 +11,11 @@ import androidx.viewbinding.ViewBinding;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.fongmi.android.tv.bean.Episode;
+import com.fongmi.android.tv.bean.EpisodePage;
 import com.fongmi.android.tv.databinding.DialogEpisodeGridBinding;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
 import com.fongmi.android.tv.ui.fragment.EpisodeFragment;
+import com.fongmi.android.tv.utils.EpisodeWidth;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -24,12 +26,15 @@ import java.util.List;
 public class EpisodeGridDialog extends BaseDialog {
 
     private final List<String> titles;
+    private final List<EpisodePage> pages;
     private EpisodeAdapter.OnClickListener listener;
     private DialogEpisodeGridBinding binding;
     private List<Episode> episodes;
+    private String vodName;
+    private boolean anyTitle;
     private boolean reverse;
     private int spanCount;
-    private int itemCount;
+    private int pageSize;
 
     public static EpisodeGridDialog create() {
         return new EpisodeGridDialog();
@@ -37,7 +42,9 @@ public class EpisodeGridDialog extends BaseDialog {
 
     public EpisodeGridDialog() {
         this.titles = new ArrayList<>();
+        this.pages = new ArrayList<>();
         this.spanCount = 5;
+        this.pageSize = 20;
     }
 
     public EpisodeGridDialog reverse(boolean reverse) {
@@ -47,6 +54,21 @@ public class EpisodeGridDialog extends BaseDialog {
 
     public EpisodeGridDialog episodes(List<Episode> episodes) {
         this.episodes = episodes;
+        return this;
+    }
+
+    public EpisodeGridDialog vodName(String vodName) {
+        this.vodName = vodName == null ? "" : vodName;
+        return this;
+    }
+
+    public EpisodeGridDialog anyTitle(boolean anyTitle) {
+        this.anyTitle = anyTitle;
+        return this;
+    }
+
+    public EpisodeGridDialog pageSize(int pageSize) {
+        this.pageSize = Math.max(pageSize, 1);
         return this;
     }
 
@@ -77,20 +99,16 @@ public class EpisodeGridDialog extends BaseDialog {
     }
 
     private void setSpanCount() {
-        int total = 0;
-        int row = ResUtil.isLand(requireActivity()) ? 5 : 10;
-        for (Episode item : episodes) total += item.getName().length();
-        int offset = (int) Math.ceil((double) total / episodes.size());
-        if (offset >= 12) spanCount = 1;
-        else if (offset >= 8) spanCount = 2;
-        else if (offset >= 4) spanCount = 3;
-        else if (offset >= 2) spanCount = 4;
-        itemCount = spanCount * row;
+        int available = ResUtil.getScreenWidth() - ResUtil.dp2px(32);
+        int width = EpisodeWidth.measure(episodes, vodName, 14, 11, 10, 28, 24, 18);
+        spanCount = Math.max(1, available / Math.max(width, 1));
     }
 
     private void setTitles() {
-        if (reverse) for (int i = episodes.size(); i > 0; i -= itemCount) titles.add(i + " - " + Math.max(i - itemCount - 1, 1));
-        else for (int i = 0; i < episodes.size(); i += itemCount) titles.add((i + 1) + " - " + Math.min(i + itemCount, episodes.size()));
+        titles.clear();
+        pages.clear();
+        pages.addAll(EpisodePage.create(episodes, pageSize, reverse));
+        for (EpisodePage page : pages) titles.add(page.getTitle());
     }
 
     private void setPager() {
@@ -102,7 +120,13 @@ public class EpisodeGridDialog extends BaseDialog {
     private void setCurrentPage() {
         for (int i = 0; i < episodes.size(); i++) {
             if (episodes.get(i).isActivated()) {
-                binding.pager.setCurrentItem(i / itemCount);
+                for (int page = 0; page < pages.size(); page++) {
+                    EpisodePage item = pages.get(page);
+                    if (i >= item.getStartIndex() && i <= item.getEndIndex()) {
+                        binding.pager.setCurrentItem(page);
+                        return;
+                    }
+                }
                 break;
             }
         }
@@ -117,7 +141,8 @@ public class EpisodeGridDialog extends BaseDialog {
         @NonNull
         @Override
         public Fragment createFragment(int position) {
-            return EpisodeFragment.newInstance(spanCount, episodes.subList(position * itemCount, Math.min(position * itemCount + itemCount, episodes.size())));
+            EpisodePage page = pages.get(position);
+            return EpisodeFragment.newInstance(spanCount, episodes.subList(page.getStartIndex(), page.getEndIndex() + 1), vodName, anyTitle);
         }
 
         @Override

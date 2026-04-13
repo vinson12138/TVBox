@@ -6,6 +6,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
+import android.graphics.Paint;
+import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -24,6 +26,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
@@ -46,6 +49,7 @@ import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.CastVideo;
 import com.fongmi.android.tv.bean.Danmaku;
 import com.fongmi.android.tv.bean.Episode;
+import com.fongmi.android.tv.bean.EpisodePage;
 import com.fongmi.android.tv.bean.Flag;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Keep;
@@ -67,7 +71,9 @@ import com.fongmi.android.tv.model.SiteViewModel;
 import com.fongmi.android.tv.player.Players;
 import com.fongmi.android.tv.player.exo.ExoUtil;
 import com.fongmi.android.tv.service.PlaybackService;
+import com.fongmi.android.tv.bean.EpisodeGroup;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
+import com.fongmi.android.tv.ui.adapter.EpisodeGroupAdapter;
 import com.fongmi.android.tv.ui.adapter.FlagAdapter;
 import com.fongmi.android.tv.ui.adapter.ParseAdapter;
 import com.fongmi.android.tv.ui.adapter.QualityAdapter;
@@ -88,6 +94,7 @@ import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.utils.Clock;
 import com.fongmi.android.tv.utils.FileChooser;
+import com.fongmi.android.tv.utils.EpisodeWidth;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.PiP;
@@ -106,6 +113,7 @@ import org.greenrobot.eventbus.ThreadMode;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,8 +128,12 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
     private Observer<Result> mObserveSearch;
+    private EpisodeGroupAdapter mGroupAdapter;
     private EpisodeAdapter mEpisodeAdapter;
+    private GridLayoutManager mEpisodeLayoutManager;
     private QualityAdapter mQualityAdapter;
+    private List<EpisodeGroup> mCurrentGroups;
+    private EpisodeGroup mActiveGroup;
     private ControlDialog mControlDialog;
     private QuickAdapter mQuickAdapter;
     private ParseAdapter mParseAdapter;
@@ -362,10 +374,13 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         mBinding.flag.addItemDecoration(new SpaceItemDecoration(8));
         mBinding.flag.setAdapter(mFlagAdapter = new FlagAdapter(this));
         mBinding.quick.setAdapter(mQuickAdapter = new QuickAdapter(this));
-        mBinding.episode.setHasFixedSize(true);
+        mBinding.group.setItemAnimator(null);
+        mBinding.group.addItemDecoration(new SpaceItemDecoration(8));
+        mBinding.group.setAdapter(mGroupAdapter = new EpisodeGroupAdapter(this::setGroupActivated));
         mBinding.episode.setItemAnimator(null);
-        mBinding.episode.addItemDecoration(new SpaceItemDecoration(8));
-        mBinding.episode.setAdapter(mEpisodeAdapter = new EpisodeAdapter(this, ViewType.HORI));
+        mBinding.episode.setLayoutManager(mEpisodeLayoutManager = new GridLayoutManager(this, 2));
+        mBinding.episode.addItemDecoration(new SpaceItemDecoration(4));
+        mBinding.episode.setAdapter(mEpisodeAdapter = new EpisodeAdapter(this, ViewType.GRID));
         mBinding.quality.setHasFixedSize(true);
         mBinding.quality.setItemAnimator(null);
         mBinding.quality.addItemDecoration(new SpaceItemDecoration(8));
@@ -577,7 +592,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         if (item.isActivated()) return;
         mFlagAdapter.setActivated(item);
         scrollToPosition(mBinding.flag, mFlagAdapter.getPosition());
-        setEpisodeAdapter(item.getEpisodes());
+        setGroupAdapter(item);
         setQualityVisible(false);
         seamless(item);
     }
@@ -620,14 +635,49 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         if (mControlDialog != null && mControlDialog.isVisible()) mControlDialog.updateParse();
     }
 
+    private void setGroupAdapter(Flag flag) {
+        mCurrentGroups = flag.getGroups();
+        mActiveGroup = mCurrentGroups.isEmpty() ? null : mCurrentGroups.get(0);
+        mGroupAdapter.addAll(mCurrentGroups);
+        mBinding.group.setVisibility(mCurrentGroups.size() > 1 ? View.VISIBLE : View.GONE);
+        List<Episode> episodes = mActiveGroup != null ? mActiveGroup.getEpisodes() : flag.getEpisodes();
+        setEpisodeAdapter(episodes);
+    }
+
+    private void setGroupActivated(EpisodeGroup group) {
+        mActiveGroup = group;
+        mGroupAdapter.setActivated(group);
+        setEpisodeAdapter(group.getEpisodes());
+        int pos = mEpisodeAdapter.getPosition();
+        if (pos > 0) scrollToPosition(mBinding.episode, pos);
+    }
+
     private void setEpisodeAdapter(List<Episode> items) {
         mBinding.control.action.episodes.setVisibility(items.size() < 2 ? View.GONE : View.VISIBLE);
         mBinding.control.next.setVisibility(items.size() < 2 ? View.GONE : View.VISIBLE);
         mBinding.control.prev.setVisibility(items.size() < 2 ? View.GONE : View.VISIBLE);
         mBinding.reverse.setVisibility(items.size() < 2 ? View.GONE : View.VISIBLE);
+        mBinding.reverse.setText(mHistory.isRevSort() ? R.string.play_reverse : R.string.play_sort_asc);
         mBinding.episode.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
         mBinding.more.setVisibility(items.size() < 10 ? View.GONE : View.VISIBLE);
+        String vodName = getName();
+        mEpisodeAdapter.setVodName(vodName);
+        boolean anyTitle = hasEpisodeTitles(items, vodName);
+        mEpisodeAdapter.setAnyTitle(anyTitle);
+        int cellWidth = getEpisodeCellWidth(items);
+        mEpisodeLayoutManager.setSpanCount(Math.max(1, ResUtil.getScreenWidth() / cellWidth));
         mEpisodeAdapter.addAll(items);
+    }
+
+    private int getEpisodeCellWidth(List<Episode> items) {
+        return EpisodeWidth.measure(items, getName(), 14, 11, 10, 28, 24, 18);
+    }
+
+    private boolean hasEpisodeTitles(List<Episode> items, String vodName) {
+        for (Episode ep : items) {
+            if (!Util.cleanTitle(ep.getName(), vodName).isEmpty()) return true;
+        }
+        return false;
     }
 
     private void seamless(Flag flag) {
@@ -644,8 +694,13 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void reverseEpisode(boolean scroll) {
-        mFlagAdapter.reverse();
-        setEpisodeAdapter(getFlag().getEpisodes());
+        if (mActiveGroup != null) {
+            Collections.reverse(mActiveGroup.getEpisodes());
+            setEpisodeAdapter(mActiveGroup.getEpisodes());
+        } else {
+            mFlagAdapter.reverse();
+            setEpisodeAdapter(getFlag().getEpisodes());
+        }
         if (scroll) scrollToPosition(mBinding.episode, mEpisodeAdapter.getPosition());
     }
 
@@ -656,7 +711,14 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void onMore() {
-        EpisodeGridDialog.create().reverse(mHistory.isRevSort()).episodes(mEpisodeAdapter.getItems()).show(this);
+        String vodName = getName();
+        EpisodeGridDialog.create()
+                .reverse(mHistory.isRevSort())
+                .pageSize(getEpisodePageSize(mEpisodeAdapter.getItems()))
+                .vodName(vodName)
+                .anyTitle(hasEpisodeTitles(mEpisodeAdapter.getItems(), vodName))
+                .episodes(mEpisodeAdapter.getItems())
+                .show(this);
     }
 
     private void onActor() {
@@ -861,7 +923,18 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void onEpisodes() {
-        EpisodeListDialog.create(this).episodes(mEpisodeAdapter.getItems()).show();
+        String vodName = getName();
+        EpisodeListDialog.create(this)
+                .vodName(vodName)
+                .anyTitle(hasEpisodeTitles(mEpisodeAdapter.getItems(), vodName))
+                .episodes(mEpisodeAdapter.getItems())
+                .show();
+    }
+
+    private int getEpisodePageSize(List<Episode> items) {
+        if (mActiveGroup != null) return mActiveGroup.getPageSize();
+        if (items.isEmpty()) return EpisodeGroup.PAGE_SIZE_MAIN;
+        return items.get(0).getContentType() == Episode.MAIN ? EpisodeGroup.PAGE_SIZE_MAIN : EpisodeGroup.PAGE_SIZE_OTHER;
     }
 
     private void onChoose() {
@@ -1044,8 +1117,9 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void checkHistory(Vod item) {
-        mHistory = History.find(getHistoryKey());
-        mHistory = mHistory == null ? createHistory(item) : mHistory;
+        History history = History.find(getHistoryKey());
+        mHistory = history == null ? createHistory(item) : history;
+        mHistory.setRevSort(history != null);
         if (!TextUtils.isEmpty(getMark())) mHistory.setVodRemarks(getMark());
         if (Setting.isIncognito() && mHistory.getKey().equals(getHistoryKey())) mHistory.delete();
         mBinding.control.action.opening.setText(mHistory.getOpening() <= 0 ? getString(R.string.play_op) : mPlayers.stringToTime(mHistory.getOpening()));
@@ -1063,6 +1137,7 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         history.setKey(getHistoryKey());
         history.setCid(VodConfig.getCid());
         history.setVodName(item.getName());
+        history.setRevSort(false);
         history.findEpisode(item.getFlags());
         return history;
     }
@@ -1143,7 +1218,10 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
         items.forEach(item -> mFlagAdapter.getItems().stream()
                 .filter(item::equals).findFirst().ifPresentOrElse(target -> {
                     target.mergeEpisodes(item.getEpisodes(), mHistory.isRevSort());
-                    if (target.equals(activated)) setEpisodeAdapter(target.getEpisodes());
+                    if (target.equals(activated)) {
+                        if (mActiveGroup != null) setEpisodeAdapter(mActiveGroup.getEpisodes());
+                        else setGroupAdapter(target);
+                    }
                 }, () -> mFlagAdapter.add(item)));
     }
 
@@ -1271,6 +1349,11 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     private void checkEnded(boolean notify) {
         if (mBinding.control.action.loop.isActivated()) {
             onReplay();
+        } else if (notify && mPlayers.getPosition() < 500) {
+            mPlayers.stop();
+            Notify.show(R.string.error_play_url);
+            showError(getString(R.string.error_play_url));
+            startFlow();
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             checkNext(notify);
@@ -1332,8 +1415,10 @@ public class VideoActivity extends BaseActivity implements Clock.Callback, Custo
     }
 
     private void checkSearch(boolean force) {
-        if (mQuickAdapter.isEmpty()) initSearch(mBinding.name.getText().toString(), true);
-        else if (isAutoMode() || force) nextSite();
+        if (mQuickAdapter.isEmpty()) {
+            if (!force) Notify.show(R.string.play_search_site);
+            initSearch(mBinding.name.getText().toString(), true);
+        } else if (isAutoMode() || force) nextSite();
     }
 
     private void initSearch(String keyword, boolean auto) {

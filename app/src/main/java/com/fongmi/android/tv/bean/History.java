@@ -316,6 +316,19 @@ public class History implements Diffable<History> {
         if (flags.isEmpty()) return;
         setVodFlag(flags.get(0).getFlag());
         if (!flags.get(0).getEpisodes().isEmpty()) setVodRemarks(flags.get(0).getEpisodes().get(0).getName());
+        // Priority 1: exact URL match
+        if (!getEpisodeUrl().isEmpty()) {
+            for (Flag flag : flags) {
+                for (Episode ep : flag.getEpisodes()) {
+                    if (getEpisodeUrl().equals(ep.getUrl())) {
+                        setVodFlag(flag.getFlag());
+                        setVodRemarks(ep.getName());
+                        return;
+                    }
+                }
+            }
+        }
+        // Priority 2: name-based search across history records
         for (History item : findByName(getVodName())) {
             if (getPosition() > 0) break;
             for (Flag flag : flags) {

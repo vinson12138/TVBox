@@ -30,9 +30,19 @@ public class EpisodeFragment extends BaseFragment implements EpisodeAdapter.OnCl
         return getArguments().getParcelableArrayList("items");
     }
 
-    public static EpisodeFragment newInstance(int spanCount, List<Episode> items) {
+    private String getVodName() {
+        return getArguments().getString("vodName", "");
+    }
+
+    private boolean hasAnyTitle() {
+        return getArguments().getBoolean("anyTitle");
+    }
+
+    public static EpisodeFragment newInstance(int spanCount, List<Episode> items, String vodName, boolean anyTitle) {
         Bundle args = new Bundle();
         args.putInt("spanCount", spanCount);
+        args.putString("vodName", vodName);
+        args.putBoolean("anyTitle", anyTitle);
         args.putParcelableArrayList("items", new ArrayList<>(items));
         EpisodeFragment fragment = new EpisodeFragment();
         fragment.setArguments(args);
@@ -55,6 +65,8 @@ public class EpisodeFragment extends BaseFragment implements EpisodeAdapter.OnCl
         mBinding.recycler.setItemAnimator(null);
         mBinding.recycler.setLayoutManager(new GridLayoutManager(getContext(), getSpanCount()));
         mBinding.recycler.setAdapter(adapter = new EpisodeAdapter(this, ViewType.GRID, getItems()));
+        adapter.setVodName(getVodName());
+        adapter.setAnyTitle(hasAnyTitle());
         mBinding.recycler.scrollToPosition(adapter.getPosition());
     }
 

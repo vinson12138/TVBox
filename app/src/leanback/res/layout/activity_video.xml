@@ -180,6 +180,8 @@
         android:layout_height="wrap_content"
         android:layout_alignStart="@+id/name"
         android:layout_alignBottom="@+id/video"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="horizontal">
 
         <com.google.android.material.textview.MaterialTextView
@@ -240,11 +242,15 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/video"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:overScrollMode="never">
 
         <androidx.appcompat.widget.LinearLayoutCompat
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:orientation="vertical"
             android:paddingBottom="8dp">
 
@@ -257,6 +263,8 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone"
                 tools:visibility="visible" />
 
@@ -269,6 +277,22 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <androidx.leanback.widget.HorizontalGridView
+                android:id="@+id/group"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone"
                 tools:visibility="visible" />
 
@@ -281,6 +305,8 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone" />
 
             <androidx.leanback.widget.HorizontalGridView
@@ -292,6 +318,8 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone" />
 
             <androidx.leanback.widget.HorizontalGridView
@@ -303,6 +331,8 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone" />
 
             <androidx.leanback.widget.HorizontalGridView
@@ -314,6 +344,8 @@
                 android:clipToPadding="false"
                 android:paddingStart="24dp"
                 android:paddingEnd="24dp"
+                android:paddingTop="6dp"
+                android:paddingBottom="6dp"
                 android:visibility="gone" />
 
         </androidx.appcompat.widget.LinearLayoutCompat>

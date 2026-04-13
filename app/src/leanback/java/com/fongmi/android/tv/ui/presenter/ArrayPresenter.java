@@ -10,19 +10,21 @@ import androidx.leanback.widget.Presenter;
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.AdapterArrayBinding;
 import com.fongmi.android.tv.utils.ResUtil;
-
 public class ArrayPresenter extends Presenter {
 
     private final OnClickListener listener;
     private final String backward;
     private final String forward;
     private final String reverse;
+    private final String sortAsc;
+    private String activePageTitle = "";
 
     public ArrayPresenter(OnClickListener listener) {
         this.listener = listener;
         this.backward = ResUtil.getString(R.string.play_backward);
         this.forward = ResUtil.getString(R.string.play_forward);
         this.reverse = ResUtil.getString(R.string.play_reverse);
+        this.sortAsc = ResUtil.getString(R.string.play_sort_asc);
     }
 
     public interface OnClickListener {
@@ -30,6 +32,10 @@ public class ArrayPresenter extends Presenter {
         void onRevSort();
 
         void onRevPlay(TextView view);
+    }
+
+    public void setActivePageTitle(String activePageTitle) {
+        this.activePageTitle = activePageTitle == null ? "" : activePageTitle;
     }
 
     @NonNull
@@ -43,7 +49,8 @@ public class ArrayPresenter extends Presenter {
         ViewHolder holder = (ViewHolder) viewHolder;
         String text = object.toString();
         holder.binding.text.setText(text);
-        if (text.equals(reverse)) setOnClickListener(holder, view -> listener.onRevSort());
+        holder.binding.text.setActivated(text.equals(activePageTitle));
+        if (text.equals(reverse) || text.equals(sortAsc)) setOnClickListener(holder, view -> listener.onRevSort());
         else if (text.equals(backward) || text.equals(forward)) setOnClickListener(holder, view -> listener.onRevPlay(holder.binding.text));
         else setOnClickListener(holder, null);
     }

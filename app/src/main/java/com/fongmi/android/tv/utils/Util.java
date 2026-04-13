@@ -37,6 +37,15 @@ import java.util.regex.Pattern;
 public class Util {
 
     private static final Pattern EPISODE = Pattern.compile("(?i)(?:ep|第|e|[\\-\\.\\s])\\s?(\\d{1,4})");
+    private static final Pattern DATE = Pattern.compile("((?:19|20)\\d{2})[.\\-/]?(0[1-9]|1[0-2])[.\\-/]?([0-2]\\d|3[01])");
+    private static final Pattern CLEAN_BRACKETS = Pattern.compile("[\\[（【《(][^\\]）】》)]*[\\]）】》)]");
+    private static final Pattern CLEAN_QUALITY = Pattern.compile("(?i)\\s*(?:\\b(?:4[kK]|2160[pP]|1080[pP]|720[pP]|480[pP]|HEVC|H\\.?26[45]|[xX]26[45]|AV1|WEB-DL|REMUX|HDR|蓝光)\\b|国语|粤语|原声|中字)\\s*");
+    private static final Pattern CLEAN_EPISODE = Pattern.compile("(?i)第\\s?\\d+\\s?[集话話期]|\\bep\\s?\\d{1,4}\\b|\\be\\s?\\d{1,4}\\b");
+    private static final Pattern CLEAN_FORMAT = Pattern.compile("(?i)\\s*\\.?\\b(mkv|avi|mov|ts|rmvb|flv|wmv|mp4)\\b\\s*");
+    private static final Pattern CLEAN_RESOLUTION = Pattern.compile("(?i)\\s*\\d{3,4}\\s*[xX×]\\s*\\d{3,4}\\s*");
+    private static final Pattern CLEAN_FILESIZE = Pattern.compile("(?i)\\s*\\d+\\.?\\d*\\s*(?:GB|MB|KB)\\s*");
+    private static final Pattern CLEAN_TITLE_DECORATORS = Pattern.compile("[《》〈〉「」『』]");
+    private static final Pattern CLEAN_SEPARATORS = Pattern.compile("^[\\s\\u00B7：:·\\-—_|/\\\\]+|[\\s\\u00B7：:·\\-—_|/\\\\]+$");
 
     public static void toggleFullscreen(Activity activity, boolean fullscreen) {
         if (fullscreen) hideSystemUI(activity);
@@ -106,6 +115,13 @@ public class Util {
     public static int getNumber(String text) {
         try {
             text = text.replaceAll("\\[.*?\\]|\\(.*?\\)", "");
+            Matcher dateMatcher = DATE.matcher(text);
+            if (dateMatcher.find()) {
+                int y = Integer.parseInt(dateMatcher.group(1));
+                int m = Integer.parseInt(dateMatcher.group(2));
+                int d = Integer.parseInt(dateMatcher.group(3));
+                return y * 10000 + m * 100 + d;
+            }
             text = text.replaceAll("\\b(19|20)\\d{2}\\b", "");
             text = text.toLowerCase().replaceAll("2160p|1080p|720p|480p|4k|h26[45]|x26[45]|mp4", "");
             Matcher matcher = EPISODE.matcher(text);
@@ -180,6 +196,36 @@ public class Util {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    public static String cleanTitle(String name, String vodName) {
+        if (TextUtils.isEmpty(name)) return "";
+        String text = CLEAN_BRACKETS.matcher(name).replaceAll(" ");
+        text = CLEAN_QUALITY.matcher(text).replaceAll(" ");
+        text = CLEAN_EPISODE.matcher(text).replaceAll(" ");
+        text = DATE.matcher(text).replaceAll(" ");
+        text = text.replaceAll("\\b(19|20)\\d{2}\\b", " ");
+        text = CLEAN_FORMAT.matcher(text).replaceAll(" ");
+        text = CLEAN_RESOLUTION.matcher(text).replaceAll(" ");
+        text = CLEAN_FILESIZE.matcher(text).replaceAll(" ");
+        if (!TextUtils.isEmpty(vodName)) {
+            String escaped = Pattern.quote(vodName);
+            // remove vodName and any surrounding title decorators / separators
+            text = text.replaceAll("[《\\[【「〖（(]?\\s*" + escaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
+            String[] words = vodName.split("[\\s·]+");
+            if (words.length > 1) {
+                for (String word : words) {
+                    if (word.length() >= 2) {
+                        String wEscaped = Pattern.quote(word);
+                        text = text.replaceAll("[《\\[【「〖（(]?\\s*" + wEscaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
+                    }
+                }
+            }
+        }
+        text = CLEAN_TITLE_DECORATORS.matcher(text).replaceAll(" ");
+        text = text.replaceAll("\\s{2,}", " ");
+        text = CLEAN_SEPARATORS.matcher(text).replaceAll("");
+        return text.trim();
     }
 
     public static Intent getChooser(Intent intent) {

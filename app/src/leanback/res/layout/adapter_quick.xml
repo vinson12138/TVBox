@@ -6,8 +6,9 @@
     android:background="@drawable/selector_item"
     android:focusable="true"
     android:focusableInTouchMode="true"
-    android:nextFocusUp="@id/part"
-    android:orientation="vertical">
+    android:nextFocusUp="@id/array"
+    android:orientation="vertical"
+    android:stateListAnimator="@animator/scale_focus">
 
     <com.google.android.material.textview.MaterialTextView
         android:id="@+id/name"

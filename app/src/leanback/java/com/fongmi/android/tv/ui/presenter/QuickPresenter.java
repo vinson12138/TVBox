@@ -9,7 +9,6 @@ import androidx.leanback.widget.Presenter;
 import com.fongmi.android.tv.bean.Vod;
 import com.fongmi.android.tv.databinding.AdapterQuickBinding;
 import com.fongmi.android.tv.utils.ResUtil;
-
 public class QuickPresenter extends Presenter {
 
     private final OnClickListener listener;

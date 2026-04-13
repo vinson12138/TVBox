@@ -11,9 +11,23 @@ import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Episode implements Parcelable, Diffable<Episode> {
+
+    public static final int MAIN = 0;
+    public static final int MOVIE = 1;
+    public static final int SPECIAL = 2;
+    public static final int BONUS = 3;
+    public static final int TRAILER = 4;
+
+    private static final Pattern VK_RESOLUTION = Pattern.compile("(\\d{3,4})[xX×](\\d{3,4})");
+    private static final Pattern VK_FILESIZE = Pattern.compile("(?i)(\\d+\\.?\\d*)\\s*(GB|MB)");
+    private static final Pattern VK_FORMAT = Pattern.compile("(?i)\\b(mkv|avi|ts|rmvb|flv|wmv)\\b");
 
     @SerializedName("name")
     private String name;
@@ -24,6 +38,8 @@ public class Episode implements Parcelable, Diffable<Episode> {
 
     private int index;
     private int number;
+    private int contentType;
+    private String versionKey;
     private boolean activated;
     private boolean selected;
 
@@ -37,12 +53,53 @@ public class Episode implements Parcelable, Diffable<Episode> {
 
     private Episode(String name, String desc, String url) {
         this.number = Util.getNumber(name);
+        this.contentType = parseContentType(name);
+        this.versionKey = parseVersionKey(name);
         this.name = name;
         this.desc = desc;
         this.url = url;
     }
 
     public Episode() {
+    }
+
+    private static int parseContentType(String name) {
+        if (name == null || name.isEmpty()) return MAIN;
+        String lower = name.toLowerCase();
+        if (lower.contains("剧场版") || lower.contains("电影版")) return MOVIE;
+        if (lower.contains("特别篇") || lower.contains("特典") || lower.contains("ova")
+                || lower.contains("oad") || lower.matches(".*\\bsp\\b.*")) return SPECIAL;
+        if (lower.contains("花絮") || lower.contains("幕后") || lower.contains("彩蛋")) return BONUS;
+        if (lower.contains("预告") || lower.contains("先导") || lower.contains("trailer")
+                || lower.matches(".*\\bpv\\b.*")) return TRAILER;
+        return MAIN;
+    }
+
+    private static String parseVersionKey(String name) {
+        if (name == null || name.isEmpty()) return "";
+        String upper = name.toUpperCase();
+        List<String> tags = new ArrayList<>();
+        if (upper.contains("4K") || upper.contains("2160P")) tags.add("4K");
+        else if (upper.contains("1080P")) tags.add("1080P");
+        else if (upper.contains("720P")) tags.add("720P");
+        else if (upper.contains("480P")) tags.add("480P");
+        if (upper.contains("AV1")) tags.add("AV1");
+        else if (upper.contains("HEVC") || upper.contains("H265") || upper.contains("X265")) tags.add("H265");
+        else if (upper.contains("H264") || upper.contains("X264")) tags.add("H264");
+        if (name.contains("国语")) tags.add("国语");
+        if (name.contains("粤语")) tags.add("粤语");
+        if (name.contains("原声")) tags.add("原声");
+        if (name.contains("中字")) tags.add("中字");
+        if (name.contains("蓝光") || upper.contains("REMUX")) tags.add("蓝光");
+        if (upper.contains("HDR")) tags.add("HDR");
+        if (upper.contains("WEB-DL")) tags.add("WEB-DL");
+        Matcher resMatcher = VK_RESOLUTION.matcher(name);
+        if (resMatcher.find()) tags.add(resMatcher.group(1) + "x" + resMatcher.group(2));
+        Matcher sizeMatcher = VK_FILESIZE.matcher(name);
+        if (sizeMatcher.find()) tags.add(sizeMatcher.group(1) + sizeMatcher.group(2).toUpperCase());
+        Matcher fmtMatcher = VK_FORMAT.matcher(name);
+        if (fmtMatcher.find()) tags.add(fmtMatcher.group(1).toUpperCase());
+        return String.join(",", tags);
     }
 
     public String getName() {
@@ -71,6 +128,23 @@ public class Episode implements Parcelable, Diffable<Episode> {
 
     public int getNumber() {
         return number;
+    }
+
+    public int getContentType() {
+        return contentType;
+    }
+
+    public String getVersionKey() {
+        return versionKey == null ? "" : versionKey;
+    }
+
+    public String getPrimaryText() {
+        return getDesc().concat(getDisplayText());
+    }
+
+    public String getDisplayText() {
+        if (contentType == MAIN && number > 0) return String.valueOf(number);
+        return getName();
     }
 
     public boolean isActivated() {
@@ -137,6 +211,8 @@ public class Episode implements Parcelable, Diffable<Episode> {
         dest.writeString(this.desc);
         dest.writeString(this.url);
         dest.writeInt(this.number);
+        dest.writeInt(this.contentType);
+        dest.writeString(this.versionKey);
         dest.writeByte(this.activated ? (byte) 1 : (byte) 0);
         dest.writeByte(this.selected ? (byte) 1 : (byte) 0);
     }
@@ -146,6 +222,8 @@ public class Episode implements Parcelable, Diffable<Episode> {
         this.desc = in.readString();
         this.url = in.readString();
         this.number = in.readInt();
+        this.contentType = in.readInt();
+        this.versionKey = in.readString();
         this.activated = in.readByte() != 0;
         this.selected = in.readByte() != 0;
     }

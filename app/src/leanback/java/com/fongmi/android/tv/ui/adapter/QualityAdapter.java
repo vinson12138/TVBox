@@ -8,7 +8,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.databinding.AdapterQualityBinding;
-
 public class QualityAdapter extends RecyclerView.Adapter<QualityAdapter.ViewHolder> {
 
     private final OnClickListener listener;

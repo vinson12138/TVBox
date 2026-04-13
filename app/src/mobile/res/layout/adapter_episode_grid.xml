@@ -1,16 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.textview.MaterialTextView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/text"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="6dp"
-    android:background="@drawable/shape_accent"
-    android:ellipsize="marquee"
-    android:focusable="true"
-    android:gravity="center"
-    android:padding="8dp"
-    android:singleLine="true"
-    android:textColor="@color/control"
-    android:textSize="14sp"
-    tools:text="20" />
+    android:background="@drawable/selector_episode_item"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="8dp">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:duplicateParentState="true"
+        android:orientation="vertical">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:duplicateParentState="true"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textColor="@color/selector_episode_text"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="1" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:alpha="0.75"
+            android:duplicateParentState="true"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textColor="@color/selector_episode_text"
+            android:textSize="11sp"
+            tools:text="第1集：标题" />
+
+    </LinearLayout>
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tag"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
+        android:duplicateParentState="true"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textColor="@color/selector_episode_text"
+        android:textSize="10sp"
+        android:visibility="gone"
+        tools:text="1080P" />
+
+</LinearLayout>

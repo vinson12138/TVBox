@@ -23,6 +23,7 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Product;
 import com.fongmi.android.tv.R;
+import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.Updater;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
@@ -259,7 +260,7 @@ public class HomeActivity extends BaseActivity implements CustomTitleView.Listen
     private void setFunc() {
         List<Func> items = new ArrayList<>();
         items.add(Func.create(R.string.home_vod));
-        if (LiveConfig.hasUrl()) items.add(Func.create(R.string.home_live));
+        if (LiveConfig.hasUrl() && Setting.isHomeLiveVisible()) items.add(Func.create(R.string.home_live));
         items.add(Func.create(R.string.home_search));
         items.add(Func.create(R.string.home_keep));
         items.add(Func.create(R.string.home_push));

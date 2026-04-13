@@ -16,12 +16,15 @@ import com.fongmi.android.tv.ui.holder.EpisodeHoriHolder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
 
     private final OnClickListener listener;
     private final List<Episode> mItems;
     private final int viewType;
+    private String vodName = "";
+    private boolean mAnyTitle = false;
 
     public EpisodeAdapter(OnClickListener listener, int viewType) {
         this(listener, viewType, new ArrayList<>());
@@ -31,6 +34,14 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
         this.listener = listener;
         this.viewType = viewType;
         this.mItems = items;
+    }
+
+    public void setVodName(String name) {
+        this.vodName = name == null ? "" : name;
+    }
+
+    public void setAnyTitle(boolean anyTitle) {
+        this.mAnyTitle = anyTitle;
     }
 
     public interface OnClickListener {
@@ -99,7 +110,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<BaseEpisodeHolder> {
         if (viewType == ViewType.HORI) {
             return new EpisodeHoriHolder(AdapterEpisodeHoriBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener);
         } else {
-            return new EpisodeGridHolder(AdapterEpisodeGridBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener);
+            return new EpisodeGridHolder(AdapterEpisodeGridBinding.inflate(LayoutInflater.from(parent.getContext()), parent, false), listener, () -> vodName, () -> mAnyTitle);
         }
     }
 }

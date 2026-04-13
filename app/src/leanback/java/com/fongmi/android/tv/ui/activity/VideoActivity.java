@@ -37,6 +37,8 @@ import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Danmaku;
 import com.fongmi.android.tv.bean.Episode;
+import com.fongmi.android.tv.bean.EpisodeGroup;
+import com.fongmi.android.tv.bean.EpisodePage;
 import com.fongmi.android.tv.bean.Flag;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Keep;
@@ -66,18 +68,19 @@ import com.fongmi.android.tv.ui.dialog.DescDialog;
 import com.fongmi.android.tv.ui.dialog.SubtitleDialog;
 import com.fongmi.android.tv.ui.dialog.TrackDialog;
 import com.fongmi.android.tv.ui.presenter.ArrayPresenter;
+import com.fongmi.android.tv.ui.presenter.EpisodeGroupPresenter;
 import com.fongmi.android.tv.ui.presenter.EpisodePresenter;
 import com.fongmi.android.tv.ui.presenter.FlagPresenter;
 import com.fongmi.android.tv.ui.presenter.ParsePresenter;
-import com.fongmi.android.tv.ui.presenter.PartPresenter;
 import com.fongmi.android.tv.ui.presenter.QuickPresenter;
 import com.fongmi.android.tv.utils.Clock;
+import com.fongmi.android.tv.utils.EpisodeWidth;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ImgUtil;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.Notify;
-import com.fongmi.android.tv.utils.PartUtil;
 import com.fongmi.android.tv.utils.ResUtil;
+import com.fongmi.android.tv.utils.Util;
 import com.fongmi.android.tv.utils.Sniffer;
 import com.fongmi.android.tv.utils.Task;
 import com.fongmi.android.tv.utils.Traffic;
@@ -109,13 +112,17 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     private ArrayObjectAdapter mParseAdapter;
     private ArrayObjectAdapter mQuickAdapter;
     private ArrayObjectAdapter mFlagAdapter;
-    private ArrayObjectAdapter mPartAdapter;
     private Observer<Result> mObserveDetail;
     private Observer<Result> mObservePlayer;
     private Observer<Result> mObserveSearch;
     private QualityAdapter mQualityAdapter;
+    private EpisodeGroupPresenter mGroupPresenter;
+    private ArrayObjectAdapter mGroupAdapter;
+    private final List<EpisodePage> mEpisodePages = new ArrayList<>();
+    private List<EpisodeGroup> mCurrentGroups;
+    private EpisodeGroup mActiveGroup;
     private FlagPresenter mFlagPresenter;
-    private PartPresenter mPartPresenter;
+    private ArrayPresenter mArrayPresenter;
     private CustomKeyDownVod mKeyDown;
     private SiteViewModel mViewModel;
     private List<String> mBroken;
@@ -133,6 +140,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     private Clock mClock;
     private View mFocus1;
     private View mFocus2;
+    private String mSearchKeyword = "";
     private String tag;
 
     public static void push(FragmentActivity activity, String text) {
@@ -336,7 +344,18 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mBinding.array.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
             @Override
             public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
-                if (mEpisodeAdapter.size() > 20 && position > 1) mBinding.episode.setSelectedPosition((position - 2) * 20);
+                if (position > 0 && position - 1 < mEpisodePages.size()) {
+                    EpisodePage page = mEpisodePages.get(position - 1);
+                    mArrayPresenter.setActivePageTitle(page.getTitle());
+                    mBinding.episode.setSelectedPosition(page.getAnchorIndex());
+                    notifyItemChanged(mBinding.array, mArrayAdapter);
+                }
+            }
+        });
+        mBinding.group.addOnChildViewHolderSelectedListener(new OnChildViewHolderSelectedListener() {
+            @Override
+            public void onChildViewHolderSelected(@NonNull RecyclerView parent, @Nullable RecyclerView.ViewHolder child, int position, int subposition) {
+                if (mGroupAdapter.size() > 0) setGroupActivated((EpisodeGroup) mGroupAdapter.get(position));
             }
         });
     }
@@ -351,12 +370,12 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mBinding.quality.setHorizontalSpacing(ResUtil.dp2px(8));
         mBinding.quality.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.quality.setAdapter(mQualityAdapter = new QualityAdapter(this::setQualityActivated));
+        mBinding.group.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.group.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
+        mBinding.group.setAdapter(new ItemBridgeAdapter(mGroupAdapter = new ArrayObjectAdapter(mGroupPresenter = new EpisodeGroupPresenter(this::setGroupActivated))));
         mBinding.array.setHorizontalSpacing(ResUtil.dp2px(8));
         mBinding.array.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-        mBinding.array.setAdapter(new ItemBridgeAdapter(mArrayAdapter = new ArrayObjectAdapter(new ArrayPresenter(this))));
-        mBinding.part.setHorizontalSpacing(ResUtil.dp2px(8));
-        mBinding.part.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
-        mBinding.part.setAdapter(new ItemBridgeAdapter(mPartAdapter = new ArrayObjectAdapter(mPartPresenter = new PartPresenter(item -> initSearch(item, false)))));
+        mBinding.array.setAdapter(new ItemBridgeAdapter(mArrayAdapter = new ArrayObjectAdapter(mArrayPresenter = new ArrayPresenter(this))));
         mBinding.quick.setHorizontalSpacing(ResUtil.dp2px(8));
         mBinding.quick.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.quick.setAdapter(new ItemBridgeAdapter(mQuickAdapter = new ArrayObjectAdapter(new QuickPresenter(this::setSearch))));
@@ -542,16 +561,55 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         for (int i = 0; i < mFlagAdapter.size(); i++) ((Flag) mFlagAdapter.get(i)).setActivated(item);
         mBinding.flag.setSelectedPosition(mFlagAdapter.indexOf(item));
         notifyItemChanged(mBinding.flag, mFlagAdapter);
-        setEpisodeAdapter(item.getEpisodes());
+        setGroupAdapter(item);
         setQualityVisible(false);
         seamless(item);
     }
 
+    private void setGroupAdapter(Flag flag) {
+        mCurrentGroups = flag.getGroups();
+        mActiveGroup = mCurrentGroups.isEmpty() ? null : mCurrentGroups.get(0);
+        mGroupAdapter.setItems(mCurrentGroups, null);
+        syncGroupActivation();
+        mBinding.group.setVisibility(mCurrentGroups.size() > 1 ? View.VISIBLE : View.GONE);
+        List<Episode> episodes = mActiveGroup != null ? mActiveGroup.getEpisodes() : flag.getEpisodes();
+        setEpisodeAdapter(episodes);
+        updateFocus();
+    }
+
+    private void setGroupActivated(EpisodeGroup group) {
+        if (group == null) return;
+        if (group == mActiveGroup && group.isActivated()) return;
+        mActiveGroup = group;
+        syncGroupActivation();
+        mBinding.group.setSelectedPosition(mCurrentGroups.indexOf(group));
+        setEpisodeAdapter(group.getEpisodes());
+        int pos = getEpisodePosition();
+        if (pos > 0) mBinding.episode.setSelectedPosition(pos);
+    }
+
     private void setEpisodeAdapter(List<Episode> items) {
         mBinding.episode.setVisibility(items.isEmpty() ? View.GONE : View.VISIBLE);
+        String vodName = getName();
+        mEpisodePresenter.setVodName(vodName);
+        mEpisodePresenter.setItemWidth(getEpisodeItemWidth(items));
+        mEpisodePresenter.setAnyTitle(hasEpisodeTitles(items, vodName));
         mEpisodeAdapter.setItems(items, null);
         setArrayAdapter(items.size());
         setR2Callback();
+    }
+
+    private int getEpisodeItemWidth(List<Episode> items) {
+        int computed = EpisodeWidth.measure(items, getName(), 15, 12, 11, 36, 28, 20);
+        if (EpisodeWidth.isPrimaryOnly(items, getName())) return computed;
+        return Math.max(computed, ResUtil.dp2px(80));
+    }
+
+    private boolean hasEpisodeTitles(List<Episode> items, String vodName) {
+        for (Episode ep : items) {
+            if (!Util.cleanTitle(ep.getName(), vodName).isEmpty()) return true;
+        }
+        return false;
     }
 
     private void seamless(Flag flag) {
@@ -569,6 +627,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         for (int i = 0; i < mFlagAdapter.size(); i++) ((Flag) mFlagAdapter.get(i)).toggle(flagPosition == i, item);
         mBinding.episode.setSelectedPosition(getEpisodePosition());
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
+        syncArrayActivation();
         onRefresh();
     }
 
@@ -587,8 +646,13 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void reverseEpisode(boolean scroll) {
-        for (int i = 0; i < mFlagAdapter.size(); i++) Collections.reverse(((Flag) mFlagAdapter.get(i)).getEpisodes());
-        setEpisodeAdapter(getFlag().getEpisodes());
+        if (mActiveGroup != null) {
+            Collections.reverse(mActiveGroup.getEpisodes());
+            setEpisodeAdapter(mActiveGroup.getEpisodes());
+        } else {
+            for (int i = 0; i < mFlagAdapter.size(); i++) Collections.reverse(((Flag) mFlagAdapter.get(i)).getEpisodes());
+            setEpisodeAdapter(getFlag().getEpisodes());
+        }
         if (scroll) mBinding.episode.setSelectedPosition(getEpisodePosition());
     }
 
@@ -600,34 +664,63 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
 
     private void setArrayAdapter(int size) {
         List<String> items = new ArrayList<>();
-        items.add(getString(R.string.play_reverse));
-        items.add(getString(mHistory.getRevPlayText()));
+        mEpisodePages.clear();
+        items.add(getString(mHistory.isRevSort() ? R.string.play_reverse : R.string.play_sort_asc));
+        mEpisodePages.addAll(EpisodePage.create(mActiveGroup != null ? mActiveGroup.getEpisodes() : getFlag().getEpisodes(), getEpisodePageSize(), mHistory.isRevSort()));
         mBinding.array.setVisibility(size > 1 ? View.VISIBLE : View.GONE);
-        if (mHistory.isRevSort()) for (int i = size; i > 0; i -= 20) items.add(i + "-" + Math.max(i - 19, 1));
-        else for (int i = 0; i < size; i += 20) items.add((i + 1) + "-" + Math.min(i + 20, size));
+        for (EpisodePage page : mEpisodePages) items.add(page.getTitle());
         mArrayAdapter.setItems(items, null);
+        syncArrayActivation();
+    }
+
+    private int getEpisodePageSize() {
+        if (mActiveGroup != null) return mActiveGroup.getPageSize();
+        if (mEpisodeAdapter.size() == 0) return EpisodeGroup.PAGE_SIZE_MAIN;
+        Episode episode = (Episode) mEpisodeAdapter.get(0);
+        return episode.getContentType() == Episode.MAIN ? EpisodeGroup.PAGE_SIZE_MAIN : EpisodeGroup.PAGE_SIZE_OTHER;
     }
 
     private int findFocusDown(int index) {
-        List<Integer> orders = Arrays.asList(R.id.flag, R.id.quality, R.id.episode, R.id.array, R.id.part, R.id.quick);
+        List<Integer> orders = Arrays.asList(R.id.flag, R.id.quality, R.id.group, R.id.episode, R.id.array, R.id.quick);
         for (int i = 0; i < orders.size(); i++) if (i > index) if (isVisible(findViewById(orders.get(i)))) return orders.get(i);
         return 0;
     }
 
     private int findFocusUp(int index) {
-        List<Integer> orders = Arrays.asList(R.id.flag, R.id.quality, R.id.episode, R.id.array, R.id.part, R.id.quick);
+        List<Integer> orders = Arrays.asList(R.id.flag, R.id.quality, R.id.group, R.id.episode, R.id.array, R.id.quick);
         for (int i = orders.size() - 1; i >= 0; i--) if (i < index) if (isVisible(findViewById(orders.get(i)))) return orders.get(i);
         return 0;
     }
 
     private void updateFocus() {
-        mPartPresenter.setNextFocusUp(findFocusUp(4));
-        mEpisodePresenter.setNextFocusUp(findFocusUp(2));
+        mEpisodePresenter.setNextFocusUp(findFocusUp(3));
+        mGroupPresenter.setNextFocusUp(findFocusUp(2));
+        mGroupPresenter.setNextFocusDown(findFocusDown(2));
         mFlagPresenter.setNextFocusDown(findFocusDown(0));
-        mEpisodePresenter.setNextFocusDown(findFocusDown(2));
+        mEpisodePresenter.setNextFocusDown(findFocusDown(3));
         notifyItemChanged(mBinding.episode, mEpisodeAdapter);
-        notifyItemChanged(mBinding.part, mPartAdapter);
+        notifyItemChanged(mBinding.group, mGroupAdapter);
         notifyItemChanged(mBinding.flag, mFlagAdapter);
+    }
+
+    private void syncGroupActivation() {
+        if (mCurrentGroups == null) return;
+        for (EpisodeGroup item : mCurrentGroups) item.setActivated(mActiveGroup);
+        if (mGroupAdapter.size() > 0) notifyItemChanged(mBinding.group, mGroupAdapter);
+    }
+
+    private void syncArrayActivation() {
+        mArrayPresenter.setActivePageTitle(findActivePageTitle());
+        if (mArrayAdapter.size() > 0) notifyItemChanged(mBinding.array, mArrayAdapter);
+    }
+
+    private String findActivePageTitle() {
+        if (mEpisodePages.isEmpty()) return "";
+        int position = getEpisodePosition();
+        for (EpisodePage page : mEpisodePages) {
+            if (position >= page.getStartIndex() && position <= page.getEndIndex()) return page.getTitle();
+        }
+        return mEpisodePages.get(0).getTitle();
     }
 
     @Override
@@ -941,12 +1034,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         });
     }
 
-    private void setPartAdapter() {
-        mPartAdapter.setItems(PartUtil.split(mHistory.getVodName()), null);
-        mBinding.part.setVisibility(View.VISIBLE);
-        setR2Callback();
-    }
-
     private void checkFlag(Vod item) {
         boolean empty = item.getFlags().isEmpty();
         mBinding.flag.setVisibility(empty ? View.GONE : View.VISIBLE);
@@ -959,8 +1046,9 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void checkHistory(Vod item) {
-        mHistory = History.find(getHistoryKey());
-        mHistory = mHistory == null ? createHistory(item) : mHistory;
+        History history = History.find(getHistoryKey());
+        mHistory = history == null ? createHistory(item) : history;
+        mHistory.setRevSort(history != null);
         if (!TextUtils.isEmpty(getMark())) mHistory.setVodRemarks(getMark());
         if (Setting.isIncognito() && mHistory.getKey().equals(getHistoryKey())) mHistory.delete();
         mBinding.control.opening.setText(mHistory.getOpening() <= 0 ? getString(R.string.play_op) : mPlayers.stringToTime(mHistory.getOpening()));
@@ -969,7 +1057,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         mHistory.setVodName(item.getName());
         mHistory.setVodPic(item.getPic());
         setScale(getScale());
-        setPartAdapter();
         setMetadata();
         setArtwork();
     }
@@ -979,6 +1066,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         history.setKey(getHistoryKey());
         history.setCid(VodConfig.getCid());
         history.setVodName(item.getName());
+        history.setRevSort(false);
         history.findEpisode(item.getFlags());
         return history;
     }
@@ -1034,7 +1122,6 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         updateFlag(getFlag(), item.getFlags());
         if (pic || name) setMetadata();
         if (pic || name) updateKeep();
-        if (name) setPartAdapter();
         if (pic) setArtwork();
         setText(item);
     }
@@ -1043,7 +1130,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         items.forEach(item -> IntStream.range(0, mFlagAdapter.size()).mapToObj(i -> (Flag) mFlagAdapter.get(i))
                 .filter(item::equals).findFirst().ifPresentOrElse(target -> {
                     target.mergeEpisodes(item.getEpisodes(), mHistory.isRevSort());
-                    if (target.equals(activated)) setEpisodeAdapter(target.getEpisodes());
+                    if (target.equals(activated)) setEpisodeAdapter(mActiveGroup != null ? mActiveGroup.getEpisodes() : target.getEpisodes());
                 }, () -> mFlagAdapter.add(item)));
     }
 
@@ -1130,6 +1217,11 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     private void checkEnded(boolean notify) {
         if (mBinding.control.loop.isActivated()) {
             onReplay();
+        } else if (notify && mPlayers.getPosition() < 500) {
+            mPlayers.stop();
+            Notify.show(R.string.error_play_url);
+            showError(getString(R.string.error_play_url));
+            startFlow();
         } else {
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             checkNext(notify);
@@ -1190,15 +1282,17 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void checkSearch(boolean force) {
-        if (mQuickAdapter.size() == 0) initSearch(mBinding.name.getText().toString(), true);
-        else if (isAutoMode() || force) nextSite();
+        if (mQuickAdapter.size() == 0) {
+            if (!force) Notify.show(R.string.play_search_site);
+            initSearch(mBinding.name.getText().toString(), true);
+        } else if (isAutoMode() || force) nextSite();
     }
 
     private void initSearch(String keyword, boolean auto) {
         setAutoMode(auto);
         setInitAuto(auto);
         startSearch(keyword);
-        mBinding.part.setTag(keyword);
+        mSearchKeyword = keyword;
     }
 
     private boolean isPass(Site item) {
@@ -1231,7 +1325,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     private boolean mismatch(Vod item) {
         if (getId().equals(item.getId())) return true;
         if (mBroken.contains(item.getId())) return true;
-        String keyword = Objects.toString(mBinding.part.getTag(), "");
+        String keyword = Objects.toString(mSearchKeyword, "");
         if (isAutoMode()) return !item.getName().equals(keyword);
         else return !item.getName().contains(keyword);
     }

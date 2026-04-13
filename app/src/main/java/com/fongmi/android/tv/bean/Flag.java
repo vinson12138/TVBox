@@ -18,9 +18,13 @@ import org.simpleframework.xml.Text;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class Flag implements Parcelable, Diffable<Flag> {
 
@@ -131,6 +135,45 @@ public class Flag implements Parcelable, Diffable<Flag> {
             if (rev) getEpisodes().add(0, item);
             else getEpisodes().add(item);
         }
+    }
+
+    private static final String[] GROUP_NAMES = {"正片", "剧场版", "特别篇", "花絮", "预告"};
+    private static final int[] GROUP_ORDER = {Episode.MAIN, Episode.MOVIE, Episode.SPECIAL, Episode.BONUS, Episode.TRAILER};
+
+    public List<EpisodeGroup> getGroups() {
+        Map<Integer, List<Episode>> buckets = new LinkedHashMap<>();
+        for (int type : GROUP_ORDER) buckets.put(type, new ArrayList<>());
+        for (int i = 0; i < episodes.size(); i++) {
+            Episode ep = episodes.get(i);
+            ep.setIndex(i);
+            buckets.get(ep.getContentType()).add(ep);
+        }
+        List<EpisodeGroup> groups = new ArrayList<>();
+        for (int type : GROUP_ORDER) {
+            List<Episode> bucket = buckets.get(type);
+            if (bucket.isEmpty()) continue;
+            bucket.sort(Comparator.comparingInt(Episode::getNumber).thenComparingInt(Episode::getIndex));
+            List<Episode> deduped = deduplicate(bucket);
+            groups.add(new EpisodeGroup(type, GROUP_NAMES[type], deduped));
+        }
+        return groups;
+    }
+
+    private static List<Episode> deduplicate(List<Episode> items) {
+        Set<String> seen = new LinkedHashSet<>();
+        List<Episode> result = new ArrayList<>();
+        for (Episode ep : items) {
+            String key = contentKey(ep) + "|" + ep.getVersionKey();
+            if (seen.add(key)) result.add(ep);
+        }
+        return result;
+    }
+
+    private static String contentKey(Episode ep) {
+        if (ep.getContentType() == Episode.MAIN && ep.getNumber() > 0) {
+            return ep.getContentType() + ":" + ep.getNumber();
+        }
+        return ep.getContentType() + ":" + ep.getName().toLowerCase().trim();
     }
 
     public Flag trans() {

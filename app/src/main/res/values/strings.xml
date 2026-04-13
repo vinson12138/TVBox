@@ -46,6 +46,7 @@
     <string name="play_invert">Invert</string>
     <string name="play_across">Across</string>
     <string name="play_reverse">Reverse</string>
+    <string name="play_sort_asc">Order</string>
     <string name="play_track_text">Text</string>
     <string name="play_track_audio">Audio</string>
     <string name="play_track_video">Video</string>
@@ -56,6 +57,7 @@
     <string name="play_switch_flag">Switching flag to <xliff:g name="name">%s</xliff:g></string>
     <string name="play_switch_site">Switching site to <xliff:g name="name">%s</xliff:g></string>
     <string name="play_switch_parse">Switching parse to <xliff:g name="name">%s</xliff:g></string>
+    <string name="play_search_site">Playback failed, searching other sources</string>
 
     <!-- Danmaku -->
     <string name="danmaku">Danmaku</string>
@@ -73,6 +75,7 @@
     <!-- Setting -->
     <string name="setting_vod">Vod</string>
     <string name="setting_live">Live</string>
+    <string name="setting_home_live_visible">Show live entry on home</string>
     <string name="setting_wall">Wallpaper</string>
     <string name="setting_player">Player setting</string>
     <string name="setting_incognito">Incognito mode</string>
