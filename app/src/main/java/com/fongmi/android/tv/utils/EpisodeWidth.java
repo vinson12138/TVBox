@@ -11,7 +11,7 @@ public class EpisodeWidth {
     public static boolean isPrimaryOnly(List<Episode> items, String vodName) {
         if (items == null || items.isEmpty()) return false;
         for (Episode item : items) {
-            if (!Util.cleanTitle(item.getName(), vodName).isEmpty()) return false;
+            if (!item.getCleanSubtitle(vodName).isEmpty()) return false;
             if (!item.getVersionKey().isEmpty()) return false;
         }
         return true;
@@ -34,7 +34,7 @@ public class EpisodeWidth {
         tagPaint.setTextSize(ResUtil.sp2px(tagSp));
 
         String primary = item.getPrimaryText();
-        String subtitle = Util.cleanTitle(item.getName(), vodName);
+        String subtitle = item.getCleanSubtitle(vodName);
         String tag = item.getVersionKey();
 
         int contentWidth = (int) Math.ceil(primaryPaint.measureText(primary));

@@ -361,25 +361,25 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     }
 
     private void setRecyclerView() {
-        mBinding.flag.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.flag.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.flag.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.flag.setAdapter(new ItemBridgeAdapter(mFlagAdapter = new ArrayObjectAdapter(mFlagPresenter = new FlagPresenter(this::setFlagActivated))));
-        mBinding.episode.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.episode.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.episode.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.episode.setAdapter(new ItemBridgeAdapter(mEpisodeAdapter = new ArrayObjectAdapter(mEpisodePresenter = new EpisodePresenter(this::setEpisodeActivated))));
-        mBinding.quality.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.quality.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.quality.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.quality.setAdapter(mQualityAdapter = new QualityAdapter(this::setQualityActivated));
-        mBinding.group.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.group.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.group.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.group.setAdapter(new ItemBridgeAdapter(mGroupAdapter = new ArrayObjectAdapter(mGroupPresenter = new EpisodeGroupPresenter(this::setGroupActivated))));
-        mBinding.array.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.array.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.array.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.array.setAdapter(new ItemBridgeAdapter(mArrayAdapter = new ArrayObjectAdapter(mArrayPresenter = new ArrayPresenter(this))));
-        mBinding.quick.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.quick.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.quick.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.quick.setAdapter(new ItemBridgeAdapter(mQuickAdapter = new ArrayObjectAdapter(new QuickPresenter(this::setSearch))));
-        mBinding.control.parse.setHorizontalSpacing(ResUtil.dp2px(8));
+        mBinding.control.parse.setHorizontalSpacing(ResUtil.dp2px(12));
         mBinding.control.parse.setRowHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
         mBinding.control.parse.setAdapter(new ItemBridgeAdapter(mParseAdapter = new ArrayObjectAdapter(new ParsePresenter(this::setParseActivated))));
         mParseAdapter.setItems(VodConfig.get().getParses(), null);
@@ -607,7 +607,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
 
     private boolean hasEpisodeTitles(List<Episode> items, String vodName) {
         for (Episode ep : items) {
-            if (!Util.cleanTitle(ep.getName(), vodName).isEmpty()) return true;
+            if (!ep.getCleanSubtitle(vodName).isEmpty()) return true;
         }
         return false;
     }

@@ -40,7 +40,7 @@ public class Util {
     private static final Pattern DATE = Pattern.compile("((?:19|20)\\d{2})[.\\-/]?(0[1-9]|1[0-2])[.\\-/]?([0-2]\\d|3[01])");
     private static final Pattern CLEAN_BRACKETS = Pattern.compile("[\\[（【《(][^\\]）】》)]*[\\]）】》)]");
     private static final Pattern CLEAN_QUALITY = Pattern.compile("(?i)\\s*(?:\\b(?:4[kK]|2160[pP]|1080[pP]|720[pP]|480[pP]|HEVC|H\\.?26[45]|[xX]26[45]|AV1|WEB-DL|REMUX|HDR|蓝光)\\b|国语|粤语|原声|中字)\\s*");
-    private static final Pattern CLEAN_EPISODE = Pattern.compile("(?i)第\\s?\\d+\\s?[集话話期]|\\bep\\s?\\d{1,4}\\b|\\be\\s?\\d{1,4}\\b");
+    private static final Pattern CLEAN_EPISODE = Pattern.compile("(?i)第\\s?\\d+\\s?[集话話期]|\\bep[.\\s]?\\d{1,4}\\b|\\be[.\\s]?\\d{1,4}\\b");
     private static final Pattern CLEAN_FORMAT = Pattern.compile("(?i)\\s*\\.?\\b(mkv|avi|mov|ts|rmvb|flv|wmv|mp4)\\b\\s*");
     private static final Pattern CLEAN_RESOLUTION = Pattern.compile("(?i)\\s*\\d{3,4}\\s*[xX×]\\s*\\d{3,4}\\s*");
     private static final Pattern CLEAN_FILESIZE = Pattern.compile("(?i)\\s*\\d+\\.?\\d*\\s*(?:GB|MB|KB)\\s*");
@@ -211,13 +211,13 @@ public class Util {
         if (!TextUtils.isEmpty(vodName)) {
             String escaped = Pattern.quote(vodName);
             // remove vodName and any surrounding title decorators / separators
-            text = text.replaceAll("[《\\[【「〖（(]?\\s*" + escaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
+            text = text.replaceFirst("[《\\[【「〖（(]?\\s*" + escaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
             String[] words = vodName.split("[\\s·]+");
             if (words.length > 1) {
                 for (String word : words) {
                     if (word.length() >= 2) {
                         String wEscaped = Pattern.quote(word);
-                        text = text.replaceAll("[《\\[【「〖（(]?\\s*" + wEscaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
+                        text = text.replaceFirst("[《\\[【「〖（(]?\\s*" + wEscaped + "\\s*[》\\]】」〗）)]?\\s*[-_·—]*\\s*", " ");
                     }
                 }
             }

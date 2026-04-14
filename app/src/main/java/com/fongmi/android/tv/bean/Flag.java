@@ -154,6 +154,9 @@ public class Flag implements Parcelable, Diffable<Flag> {
             if (bucket.isEmpty()) continue;
             bucket.sort(Comparator.comparingInt(Episode::getNumber).thenComparingInt(Episode::getIndex));
             List<Episode> deduped = deduplicate(bucket);
+            if (type != Episode.MAIN && type != Episode.MOVIE) {
+                for (int i = 0; i < deduped.size(); i++) deduped.get(i).setDisplayIndex(i + 1);
+            }
             groups.add(new EpisodeGroup(type, GROUP_NAMES[type], deduped));
         }
         return groups;

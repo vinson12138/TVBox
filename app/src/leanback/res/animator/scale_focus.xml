@@ -4,12 +4,12 @@
         <set>
             <objectAnimator
                 android:propertyName="scaleX"
-                android:valueTo="1.10"
+                android:valueTo="1.07"
                 android:valueType="floatType"
                 android:duration="150" />
             <objectAnimator
                 android:propertyName="scaleY"
-                android:valueTo="1.10"
+                android:valueTo="1.07"
                 android:valueType="floatType"
                 android:duration="150" />
         </set>

@@ -11,7 +11,6 @@ import androidx.leanback.widget.Presenter;
 import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.databinding.AdapterEpisodeBinding;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.fongmi.android.tv.utils.Util;
 
 public class EpisodePresenter extends Presenter {
 
@@ -71,7 +70,7 @@ public class EpisodePresenter extends Presenter {
         holder.view.setActivated(item.isActivated());
         String numberText = item.getPrimaryText();
         holder.binding.number.setText(numberText);
-        String titleText = Util.cleanTitle(item.getName(), vodName);
+        String titleText = item.getCleanSubtitle(vodName);
         boolean hasTitle = !titleText.isEmpty() && !titleText.equals(numberText);
         boolean singleLine = !anyTitle;
         holder.binding.content.setGravity(singleLine ? Gravity.CENTER : Gravity.START);

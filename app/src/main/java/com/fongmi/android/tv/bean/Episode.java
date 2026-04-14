@@ -28,6 +28,9 @@ public class Episode implements Parcelable, Diffable<Episode> {
     private static final Pattern VK_RESOLUTION = Pattern.compile("(\\d{3,4})[xX×](\\d{3,4})");
     private static final Pattern VK_FILESIZE = Pattern.compile("(?i)(\\d+\\.?\\d*)\\s*(GB|MB)");
     private static final Pattern VK_FORMAT = Pattern.compile("(?i)\\b(mkv|avi|ts|rmvb|flv|wmv)\\b");
+    private static final Pattern LEADING_EPISODE_NUM = Pattern.compile("^\\d+\\s*[.·\\-\\s]\\s*");
+    private static final Pattern LEADING_SEP = Pattern.compile("^[\\s·:\\-—_|/\\\\]+");
+    private static final Pattern CONTENT_TYPE_KEYWORDS = Pattern.compile("(?i)(?:特别篇|特典|\\bova\\b|\\boad\\b|\\bsp\\b|花絮|幕后|彩蛋|预告|先导|\\btrailer\\b|\\bpv\\b)");
 
     @SerializedName("name")
     private String name;
@@ -39,6 +42,7 @@ public class Episode implements Parcelable, Diffable<Episode> {
     private int index;
     private int number;
     private int contentType;
+    private int displayIndex = -1;
     private String versionKey;
     private boolean activated;
     private boolean selected;
@@ -126,6 +130,10 @@ public class Episode implements Parcelable, Diffable<Episode> {
         this.index = index;
     }
 
+    public void setDisplayIndex(int displayIndex) {
+        this.displayIndex = displayIndex;
+    }
+
     public int getNumber() {
         return number;
     }
@@ -143,8 +151,40 @@ public class Episode implements Parcelable, Diffable<Episode> {
     }
 
     public String getDisplayText() {
-        if (contentType == MAIN && number > 0) return String.valueOf(number);
+        if (contentType == MAIN || contentType == MOVIE) {
+            if (number > 0) return String.valueOf(number);
+            return getName();
+        }
+        // For SPECIAL/BONUS/TRAILER: prefer explicit episode number (< 10000, not a date),
+        // fall back to displayIndex assigned by Flag.getGroups(), then full name.
+        int n = (number > 0 && number < 10000) ? number : (displayIndex > 0 ? displayIndex : -1);
+        if (n > 0) {
+            if (contentType == SPECIAL) return "SP " + n;
+            if (contentType == BONUS) return "花絮" + n;
+            if (contentType == TRAILER) return "预告" + n;
+        }
         return getName();
+    }
+
+    public String getCleanSubtitle(String vodName) {
+        String text = Util.cleanTitle(name, vodName);
+        if (contentType == MAIN && number > 0) {
+            Matcher m = LEADING_EPISODE_NUM.matcher(text);
+            if (m.find()) {
+                int found = Integer.parseInt(m.group().replaceAll("[^\\d]", ""));
+                if (found == number) {
+                    text = text.substring(m.end());
+                    text = LEADING_SEP.matcher(text).replaceFirst("").trim();
+                }
+            }
+        } else if (contentType == SPECIAL || contentType == BONUS || contentType == TRAILER) {
+            text = CONTENT_TYPE_KEYWORDS.matcher(text).replaceAll("").trim();
+            // Strip residual leading episode number after keyword removal (e.g. "01 幕后" after removing "SP")
+            Matcher nm = LEADING_EPISODE_NUM.matcher(text);
+            if (nm.find()) text = text.substring(nm.end());
+            text = LEADING_SEP.matcher(text).replaceFirst("").trim();
+        }
+        return text;
     }
 
     public boolean isActivated() {

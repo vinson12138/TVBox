@@ -9,7 +9,6 @@ import com.fongmi.android.tv.bean.Episode;
 import com.fongmi.android.tv.databinding.AdapterEpisodeGridBinding;
 import com.fongmi.android.tv.ui.adapter.EpisodeAdapter;
 import com.fongmi.android.tv.ui.base.BaseEpisodeHolder;
-import com.fongmi.android.tv.utils.Util;
 
 import java.util.function.Supplier;
 
@@ -42,7 +41,7 @@ public class EpisodeGridHolder extends BaseEpisodeHolder {
         binding.getRoot().setSelected(item.isSelected());
         String numberText = item.getPrimaryText();
         binding.number.setText(numberText);
-        String titleText = Util.cleanTitle(item.getName(), vodNameProvider.get());
+        String titleText = item.getCleanSubtitle(vodNameProvider.get());
         boolean hasTitle = !titleText.isEmpty() && !titleText.equals(numberText);
         boolean singleLine = !anyTitleProvider.get();
         binding.content.setGravity(singleLine ? Gravity.CENTER : Gravity.START);
