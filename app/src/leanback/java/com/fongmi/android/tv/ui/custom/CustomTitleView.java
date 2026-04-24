@@ -12,13 +12,8 @@ import androidx.appcompat.widget.AppCompatTextView;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
-import com.fongmi.android.tv.api.config.VodConfig;
-import com.fongmi.android.tv.bean.Site;
-import com.fongmi.android.tv.impl.SiteCallback;
 import com.fongmi.android.tv.utils.KeyUtil;
 import com.fongmi.android.tv.utils.ResUtil;
-
-import java.util.List;
 
 public class CustomTitleView extends AppCompatTextView {
 
@@ -26,17 +21,13 @@ public class CustomTitleView extends AppCompatTextView {
     private Animation flicker;
     private boolean coolDown;
 
-    private Site getHome() {
-        return VodConfig.get().getHome();
-    }
-
     public CustomTitleView(@NonNull Context context) {
         super(context);
     }
 
     public CustomTitleView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        flicker = ResUtil.getAnim(R.anim.flicker);
+        flicker = ResUtil.getAnim(context, R.anim.flicker);
     }
 
     public void setListener(Listener listener) {
@@ -45,7 +36,7 @@ public class CustomTitleView extends AppCompatTextView {
     }
 
     private boolean hasEvent(KeyEvent event) {
-        return !getHome().isEmpty() && (KeyUtil.isLeftKey(event) || KeyUtil.isRightKey(event) || (KeyUtil.isUpKey(event) && !coolDown));
+        return listener != null && KeyUtil.isUpKey(event) && !coolDown;
     }
 
     @Override
@@ -64,8 +55,6 @@ public class CustomTitleView extends AppCompatTextView {
 
     private void onKeyDown(KeyEvent event) {
         if (KeyUtil.isActionDown(event) && KeyUtil.isUpKey(event)) onKeyUp();
-        else if (KeyUtil.isActionDown(event) && KeyUtil.isLeftKey(event)) listener.setSite(getSite(false));
-        else if (KeyUtil.isActionDown(event) && KeyUtil.isRightKey(event)) listener.setSite(getSite(true));
     }
 
     private void onKeyUp() {
@@ -74,21 +63,7 @@ public class CustomTitleView extends AppCompatTextView {
         coolDown = true;
     }
 
-    private Site getSite(boolean next) {
-        List<Site> items = getSites();
-        if (items.isEmpty()) return new Site();
-        int position = items.indexOf(getHome());
-        if (position < 0) position = 0;
-        if (next) position = (position + 1) % items.size();
-        else position = (position - 1 + items.size()) % items.size();
-        return items.get(position);
-    }
-
-    private List<Site> getSites() {
-        return VodConfig.get().getSites().stream().filter(site -> !site.isHide()).toList();
-    }
-
-    public interface Listener extends SiteCallback {
+    public interface Listener {
 
         void showDialog();
 

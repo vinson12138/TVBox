@@ -74,7 +74,7 @@ public class CustomMic extends AppCompatImageView {
     private void updateUI(boolean listening) {
         if (listening) {
             setListen(true);
-            startAnimation(ResUtil.getAnim(R.anim.flicker));
+            startAnimation(ResUtil.getAnim(getContext(), R.anim.flicker));
             setColorFilter(MDColor.RED_500, PorterDuff.Mode.SRC_IN);
         } else {
             setListen(false);

@@ -8,8 +8,16 @@
     <string name="home_push">推送</string>
     <string name="home_cast">投屏</string>
     <string name="home_setting">设置</string>
+    <string name="home_nav_home">首页</string>
     <string name="home_history">最近观看</string>
     <string name="home_recommend">更新推荐</string>
+    <string name="home_more_history">更多历史</string>
+    <string name="home_latest_series">最新剧集</string>
+    <string name="home_latest_anime">最新动漫</string>
+    <string name="home_latest_movie">最新电影</string>
+    <string name="home_latest_variety">最新综艺</string>
+    <string name="home_network_online">网络已连接</string>
+    <string name="home_network_offline">网络未连接</string>
 
     <!-- Cast -->
     <string name="cast_waiting">正在等待连接…</string>

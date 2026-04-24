@@ -119,7 +119,7 @@ public class CustomWallView extends FrameLayout implements DefaultLifecycleObser
 
     private void loadImage() {
         if (cache != null) binding.image.setImageDrawable(cache);
-        else binding.image.setImageResource(R.drawable.wallpaper_1);
+        else binding.image.setImageResource(R.drawable.wallpaper_2);
     }
 
     private GifDrawable gif(File file) {

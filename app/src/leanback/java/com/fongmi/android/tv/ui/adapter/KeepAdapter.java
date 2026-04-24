@@ -16,11 +16,17 @@ import com.fongmi.android.tv.utils.ResUtil;
 public class KeepAdapter extends BaseDiffAdapter<Keep, KeepAdapter.ViewHolder> {
 
     private final OnClickListener listener;
+    private final int availableWidth;
     private int width, height;
     private boolean delete;
 
     public KeepAdapter(OnClickListener listener) {
+        this(listener, ResUtil.getScreenWidth());
+    }
+
+    public KeepAdapter(OnClickListener listener, int availableWidth) {
         this.listener = listener;
+        this.availableWidth = availableWidth;
         setLayoutSize();
     }
 
@@ -35,7 +41,7 @@ public class KeepAdapter extends BaseDiffAdapter<Keep, KeepAdapter.ViewHolder> {
 
     private void setLayoutSize() {
         int space = ResUtil.dp2px(48) + ResUtil.dp2px(16 * (Product.getColumn() - 1));
-        int base = ResUtil.getScreenWidth() - space;
+        int base = availableWidth - space;
         width = base / Product.getColumn();
         height = (int) (width / 0.75f);
     }

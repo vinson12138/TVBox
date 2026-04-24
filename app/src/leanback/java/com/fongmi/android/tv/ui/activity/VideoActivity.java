@@ -616,7 +616,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
         Episode episode = flag.find(mHistory.getVodRemarks(), getMark().isEmpty());
         setQualityVisible(episode != null && episode.isActivated() && mQualityAdapter.getItemCount() > 1);
         if (episode == null || episode.isActivated()) return;
-        mHistory.setVodRemarks(episode.getName());
+        mHistory.setVodRemarks(episode.getPrimaryText());
         setEpisodeActivated(episode);
     }
 
@@ -1081,7 +1081,7 @@ public class VideoActivity extends BaseActivity implements CustomKeyDownVod.List
     private void updateHistory(Episode item) {
         mHistory.setPosition(item.matchesName(mHistory.getEpisode()) ? mHistory.getPosition() : C.TIME_UNSET);
         mHistory.setVodFlag(getFlag().getFlag());
-        mHistory.setVodRemarks(item.getName());
+        mHistory.setVodRemarks(item.getPrimaryText());
         mHistory.setEpisodeUrl(item.getUrl());
     }
 

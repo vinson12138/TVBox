@@ -129,7 +129,15 @@ public class ResUtil {
     }
 
     public static Animation getAnim(@AnimRes int resId) {
-        return AnimationUtils.loadAnimation(App.get(), resId);
+        return getAnim(App.get(), resId);
+    }
+
+    public static Animation getAnim(Context context, @AnimRes int resId) {
+        try {
+            return AnimationUtils.loadAnimation(context == null ? App.get() : context, resId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static Display getDisplay(Context context) {

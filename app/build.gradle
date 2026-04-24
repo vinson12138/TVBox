@@ -80,6 +80,15 @@ android {
         disable 'UnsafeOptInUsageError'
     }
 
+    testOptions {
+        unitTests.includeAndroidResources = true
+        unitTests.returnDefaultValues = true
+    }
+
+    tasks.register("unitTestClasses") {
+        dependsOn(tasks.matching { it.name.endsWith("UnitTestSources") })
+    }
+
     compileOptions {
         coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_17
@@ -137,6 +146,7 @@ dependencies {
     mobileImplementation 'androidx.biometric:biometric:1.1.0'
     mobileImplementation 'com.google.android.flexbox:flexbox:3.0.0'
     mobileImplementation 'com.journeyapps:zxing-android-embedded:4.3.0'
+    testImplementation 'junit:junit:4.13.2'
     annotationProcessor 'androidx.room:room-compiler:2.8.4'
     annotationProcessor 'com.github.bumptech.glide:compiler:' + glideVersion
     annotationProcessor 'org.greenrobot:eventbus-annotation-processor:3.3.1'
